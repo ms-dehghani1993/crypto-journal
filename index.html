@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>دفترچه هفتگی رمزارز</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0E14;
+    --surface: #12161F;
+    --surface-2: #1A1F2B;
+    --surface-3: #212736;
+    --line: #262C3A;
+    --text: #E8EAED;
+    --text-dim: #8B93A1;
+    --up: #4ADE80;
+    --down: #F87171;
+    --neutral: #F5A623;
+    --accent: #6EA8FE;
+    --font-ui: 'Vazirmatn', 'Segoe UI', sans-serif;
+    --font-num: 'IBM Plex Mono', monospace;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #F5F6F8; --surface: #FFFFFF; --surface-2: #EEF0F4; --surface-3: #E4E7EE;
+      --line: #DDE1E8; --text: #1A1F2B; --text-dim: #5B6472;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0B0E14; --surface: #12161F; --surface-2: #1A1F2B; --surface-3: #212736;
+    --line: #262C3A; --text: #E8EAED; --text-dim: #8B93A1;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-ui); padding: 16px 12px 70px; line-height: 1.7;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header { margin-bottom: 16px; }
+  h1 { font-size: 20px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .sub { color: var(--text-dim); font-size: 13px; }
+
+  /* Tabs */
+  .tabs {
+    position: sticky; top: env(safe-area-inset-top, 0px);
+    display: flex; gap: 4px; background: var(--bg); padding: 10px 0 12px; z-index: 10;
+    border-bottom: 1px solid var(--line); margin-bottom: 16px;
+  }
+  .tab-btn {
+    flex: 1; background: var(--surface); border: 1px solid var(--line); color: var(--text-dim);
+    padding: 9px 4px; border-radius: 8px; font-family: var(--font-ui); font-size: 12.5px;
+    font-weight: 600; cursor: pointer; text-align: center;
+  }
+  .tab-btn.active { background: var(--accent); color: #06101F; border-color: var(--accent); }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px; margin-bottom: 14px;
+  }
+  .panel h2 { font-size: 14.5px; font-weight: 700; margin: 0 0 4px; }
+  .panel .hint { font-size: 12px; color: var(--text-dim); margin: 0 0 12px; }
+
+  .field-label { font-size: 11.5px; color: var(--text-dim); display: block; margin-bottom: 4px; }
+  .field-group { margin-bottom: 10px; }
+  .field-row { display: flex; gap: 8px; }
+  .field-row > div { flex: 1; }
+  input[type="number"], input[type="date"], input[type="text"], select, textarea {
+    width: 100%; background: var(--surface-2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 8px; padding: 9px 10px; font-family: var(--font-num); font-size: 13.5px;
+  }
+  select, textarea, input[type="text"] { font-family: var(--font-ui); }
+  textarea { resize: vertical; min-height: 56px; font-size: 13px; }
+  input:focus, select:focus, textarea:focus { outline: 1.5px solid var(--accent); }
+
+  .btn {
+    background: var(--accent); color: #06101F; border: none; border-radius: 8px;
+    padding: 10px 16px; font-family: var(--font-ui); font-weight: 700; font-size: 13.5px;
+    cursor: pointer;
+  }
+  .btn.secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+  .btn.danger-outline { background: transparent; color: var(--down); border: 1px solid var(--line); }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+  .pulse-tag {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-family: var(--font-num);
+    padding: 3px 9px; border-radius: 20px; border: 1px solid var(--line);
+  }
+  .pulse-fear { color: var(--down); }
+  .pulse-neutral { color: var(--neutral); }
+  .pulse-greed { color: var(--up); }
+
+  .history-item {
+    border-top: 1px solid var(--line); padding: 10px 0; font-size: 12.5px;
+  }
+  .history-item:first-child { border-top: none; padding-top: 0; }
+  .history-item .h-date {
+    font-family: var(--font-num); color: var(--text-dim); font-size: 11.5px; margin-bottom: 3px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .del-link { color: var(--text-dim); background: none; border: none; cursor: pointer; font-size: 11px; padding: 2px 4px; }
+  .del-link:hover { color: var(--down); }
+  .empty-note { color: var(--text-dim); font-size: 12.5px; text-align: center; padding: 10px 0; }
+
+  /* Coins accordion */
+  .coin-item { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; overflow: hidden; background: var(--surface); }
+  .coin-head {
+    display: flex; align-items: center; justify-content: space-between; padding: 13px 14px;
+    cursor: pointer; user-select: none;
+  }
+  .coin-head-left { display: flex; align-items: center; gap: 10px; }
+  .coin-symbol {
+    font-family: var(--font-num); font-size: 11px; font-weight: 700; color: var(--accent);
+    background: var(--surface-2); padding: 2px 7px; border-radius: 5px;
+  }
+  .coin-title { font-weight: 700; font-size: 14.5px; }
+  .coin-last { font-size: 11px; color: var(--text-dim); font-family: var(--font-num); }
+  .chevron { color: var(--text-dim); transition: transform 0.2s ease; font-size: 12px; }
+  .coin-item.open .chevron { transform: rotate(180deg); }
+  .coin-body { display: none; padding: 0 14px 16px; border-top: 1px solid var(--line); }
+  .coin-item.open .coin-body { display: block; padding-top: 14px; }
+
+  .checklist { list-style: none; padding: 0; margin: 0 0 12px; }
+  .checklist li { margin-bottom: 8px; }
+  .chk-label {
+    display: flex; align-items: flex-start; gap: 9px; font-size: 13.5px; cursor: pointer;
+  }
+  .chk-label input[type="checkbox"] {
+    width: 17px; height: 17px; margin-top: 1px; accent-color: var(--accent); flex-shrink: 0;
+  }
+
+  .subhead {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim);
+    margin: 4px 0 8px;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align: right; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--text-dim); font-weight: 600; font-size: 11px; }
+  tr:last-child td { border-bottom: none; }
+  .status-open { color: var(--neutral); font-family: var(--font-num); font-size: 11.5px; }
+  .status-closed-profit { color: var(--up); font-family: var(--font-num); font-size: 11.5px; }
+  .status-closed-loss { color: var(--down); font-family: var(--font-num); font-size: 11.5px; }
+
+  .save-note { font-size: 11px; color: var(--text-dim); margin-top: 4px; text-align: center; }
+  footer { color: var(--text-dim); font-size: 11px; margin-top: 18px; text-align: center; }
+
+  @media (min-width: 600px) {
+    .field-row.stack-mobile { flex-direction: row; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>دفترچه هفتگی رمزارز</h1>
+    <p class="sub">پالس بازار، چک‌لیست فاندامنتال هر کوین، و دفتر معاملات — همه‌چی روی همین دستگاه ذخیره می‌شه.</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-view="pulse">پالس بازار</button>
+    <button class="tab-btn" data-view="coins">کوین‌ها</button>
+    <button class="tab-btn" data-view="trades">معاملات</button>
+  </div>
+
+  <!-- PULSE VIEW -->
+  <div class="view active" id="view-pulse">
+    <div class="panel">
+      <h2>ثبت پالس این هفته</h2>
+      <p class="hint">هفته‌ای یک‌بار، قبل از بررسی کوین‌ها، این‌رو پر کن.</p>
+
+      <div class="field-group">
+        <label class="field-label">تاریخ</label>
+        <input type="date" id="pulseDate">
+      </div>
+      <div class="field-group">
+        <label class="field-label">روند بیت‌کوین نسبت به میانگین ۲۰۰ روزه</label>
+        <select id="pulseBtcTrend">
+          <option value="above">بالای MA200 (صعودی)</option>
+          <option value="near">نزدیک MA200 (خنثی)</option>
+          <option value="below">زیر MA200 (نزولی)</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">شاخص ترس و طمع (۰-۱۰۰)</label>
+          <input type="number" id="pulseFearGreed" min="0" max="100" placeholder="مثلاً 23">
+        </div>
+        <div class="field-group">
+          <label class="field-label">روند دامیننس بیت‌کوین</label>
+          <select id="pulseDominance">
+            <option value="up">در حال افزایش</option>
+            <option value="flat">ثابت</option>
+            <option value="down">در حال کاهش</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">یادداشت این هفته (خبر مهم، اتفاق خاص و...)</label>
+        <textarea id="pulseNotes" placeholder="مثلاً: رد لایحه در سنا، خروج سرمایه از ETF ها..."></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="savePulse">ثبت پالس هفته</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>تاریخچه پالس بازار</h2>
+      <div id="pulseHistory"></div>
+    </div>
+  </div>
+
+  <!-- COINS VIEW -->
+  <div class="view" id="view-coins">
+    <div class="panel" style="margin-bottom:12px;">
+      <p class="hint" style="margin:0;">هر کوین رو باز کن، چک‌لیست فاندامنتال هفته رو تیک بزن، یادداشت بنویس و ثبت کن. تاریخچه هر کوین همون‌جا نگه داشته می‌شه.</p>
+    </div>
+    <div id="coinsList"></div>
+  </div>
+
+  <!-- TRADES VIEW -->
+  <div class="view" id="view-trades">
+    <div class="panel">
+      <h2>ثبت معامله جدید</h2>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">کوین</label>
+          <select id="tradeCoin"></select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">تاریخ</label>
+          <input type="date" id="tradeDate">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">نوع</label>
+          <select id="tradeSide">
+            <option value="buy">خرید</option>
+            <option value="sell">فروش</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">قیمت ورود</label>
+          <input type="number" step="any" id="tradePrice" placeholder="0.07">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">حجم / درصد سرمایه</label>
+        <input type="text" id="tradeSize" placeholder="مثلاً: 25% سرمایه یا 500 دلار">
+      </div>
+      <div class="field-group">
+        <label class="field-label">دلیل ورود</label>
+        <textarea id="tradeReason" placeholder="مثلاً: رسیدن به سطح حمایتی 0.07 + بازار در فاز ترس شدید"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="saveTrade">ثبت معامله (باز)</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>معاملات باز</h2>
+      <div id="openTrades"></div>
+    </div>
+
+    <div class="panel">
+      <h2>معاملات بسته‌شده</h2>
+      <div id="closedTrades"></div>
+    </div>
+  </div>
+
+  <footer>این دفترچه فقط برای سازمان‌دهی تحلیل شخصیه، نه توصیه مالی. اطلاعات فقط روی همین دستگاه شما ذخیره می‌شه.</footer>
+</div>
+
+<script>
+(function () {
+  const LS_PULSE = 'cj-pulses-v1';
+  const LS_COINS = 'cj-coin-entries-v1';
+  const LS_TRADES = 'cj-trades-v1';
+
+  function safeGet(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) { console.warn('storage read failed', e); return fallback; }
+  }
+  function safeSet(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); }
+    catch (e) { console.warn('storage write failed', e); }
+  }
+  function todayStr() {
+    const d = new Date();
+    return d.toISOString().slice(0, 10);
+  }
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str == null ? '' : str;
+    return d.innerHTML;
+  }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    const [y,m,d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  // ---------- COIN DEFINITIONS ----------
+  const COINS = [
+    { id: 'btc', symbol: 'BTC', name: 'بیت‌کوین', items: [
+      'قیمت بالای میانگین ۲۰۰ روزه است',
+      'جریان ETF ها مثبت بوده (ورودی، نه خروجی)',
+      'دامیننس بیت‌کوین در حال افزایش است',
+      'خبر نظارتی مهمی (مثبت/منفی) منتشر شده'
+    ]},
+    { id: 'eth', symbol: 'ETH', name: 'اتریوم', items: [
+      'TVL اکوسیستم نسبت به ماه قبل رشد کرده',
+      'نرخ استیکینگ پایدار یا در حال رشد است',
+      'فعالیت L2 ها (آربیتروم، بیس و...) بالاست',
+      'کارمزد گس در محدوده معقول است'
+    ]},
+    { id: 'sol', symbol: 'SOL', name: 'سولانا', items: [
+      'TVL و فعالیت DeFi در حال رشد است',
+      'قطعی یا مشکل فنی جدیدی برای شبکه گزارش نشده',
+      'فعالیت توسعه‌دهندگان بالاست',
+      'خبر مهمی درباره unlock توکن یا فشار عرضه نبوده'
+    ]},
+    { id: 'link', symbol: 'LINK', name: 'چین‌لینک', items: [
+      'TVS (در DefiLlama) نسبت به ماه قبل رشد کرده',
+      'حجم CCIP رو به رشد است',
+      'خبر مشارکت یا یکپارچگی جدید منتشر شده',
+      'جریان ETF/نهادی LINK پایدار یا مثبت است'
+    ]},
+    { id: 'ada', symbol: 'ADA', name: 'کاردانو', items: [
+      'آپدیت نقشه راه طبق برنامه اجرا شده',
+      'فعالیت GitHub/توسعه‌دهندگان قابل توجه بوده',
+      'پروژه جدیدی به اکوسیستم اضافه شده',
+      'خبر نظارتی یا مشارکتی مهمی بوده'
+    ]},
+    { id: 'xrp', symbol: 'XRP', name: 'اکس‌آرپی', items: [
+      'وضعیت حقوقی/نظارتی بدون تغییر منفی مانده',
+      'حجم ODL یا پرداخت‌های بین‌بانکی رشد داشته',
+      'مشارکت بانکی یا نهادی جدیدی اعلام شده',
+      'جریان ETF (در صورت وجود) پایدار یا مثبت بوده'
+    ]},
+    { id: 'bnb', symbol: 'BNB', name: 'بی‌ان‌بی', items: [
+      'حجم معاملات صرافی بایننس بالا مانده',
+      'TVL شبکه BNB Chain رشد کرده',
+      'رویداد سوزاندن توکن (burn) اخیر انجام شده',
+      'خبر نظارتی مرتبط با بایننس منتشر نشده'
+    ]},
+    { id: 'avax', symbol: 'AVAX', name: 'آوالانچ', items: [
+      'TVL و تعداد subnet های فعال رشد کرده',
+      'پروژه RWA یا نهادی جدیدی معرفی شده',
+      'فعالیت توسعه‌دهندگان قابل توجه بوده',
+      'خبر مشارکت مهمی در این هفته بوده'
+    ]},
+    { id: 'sui', symbol: 'SUI', name: 'سوی', items: [
+      'TVL و رشد اکوسیستم مثبت بوده',
+      'فعالیت توسعه‌دهندگان بالاست',
+      'خبر لیستینگ یا مشارکت جدیدی منتشر شده',
+      'مشکل یا قطعی شبکه‌ای گزارش نشده'
+    ]},
+    { id: 'doge', symbol: 'DOGE', name: 'دوج‌کوین', items: [
+      'بازار کلی در فاز ترس شدید یا طمع شدید نیست',
+      'حجم معاملات نسبت به میانگین طبیعی است',
+      'خبر یا حمایت مشهور جدیدی منتشر نشده/شده',
+      'قیمت هنوز در محدوده ۰.۰۵ تا ۰.۰۷ معتبر است'
+    ]}
+  ];
+
+  // ---------- TABS ----------
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('view-' + btn.dataset.view).classList.add('active');
+    });
+  });
+
+  // ---------- PULSE ----------
+  document.getElementById('pulseDate').value = todayStr();
+
+  function pulseTagClass(fg) {
+    if (fg === null || fg === undefined || isNaN(fg)) return 'pulse-neutral';
+    if (fg < 25) return 'pulse-fear';
+    if (fg > 75) return 'pulse-greed';
+    return 'pulse-neutral';
+  }
+  function pulseTagLabel(fg) {
+    if (fg === null || fg === undefined || isNaN(fg)) return '—';
+    if (fg < 25) return 'ترس شدید';
+    if (fg > 75) return 'طمع شدید';
+    return 'خنثی';
+  }
+  function trendLabel(v) {
+    return v === 'above' ? 'بالای MA200' : v === 'below' ? 'زیر MA200' : 'نزدیک MA200';
+  }
+  function domLabel(v) {
+    return v === 'up' ? 'دامیننس در حال افزایش' : v === 'down' ? 'دامیننس در حال کاهش' : 'دامیننس ثابت';
+  }
+
+  function renderPulseHistory() {
+    const list = safeGet(LS_PULSE, []);
+    const el = document.getElementById('pulseHistory');
+    if (!list.length) { el.innerHTML = '<p class="empty-note">هنوز پالسی ثبت نشده.</p>'; return; }
+    const sorted = [...list].sort((a,b) => b.date.localeCompare(a.date));
+    el.innerHTML = sorted.map(p => `
+      <div class="history-item">
+        <div class="h-date">
+          <span>${fmtDate(p.date)} — ${trendLabel(p.btcTrend)} · ${domLabel(p.dominance)}</span>
+          <button class="del-link" data-del-pulse="${p.id}">حذف</button>
+        </div>
+        <div style="margin-bottom:4px;">
+          <span class="pulse-tag ${pulseTagClass(p.fearGreed)}">ترس‌وطمع: ${p.fearGreed ?? '—'} (${pulseTagLabel(p.fearGreed)})</span>
+        </div>
+        ${p.notes ? `<div>${escapeHtml(p.notes)}</div>` : ''}
+      </div>
+    `).join('');
+    el.querySelectorAll('[data-del-pulse]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.delPulse;
+        const updated = safeGet(LS_PULSE, []).filter(p => p.id !== id);
+        safeSet(LS_PULSE, updated);
+        renderPulseHistory();
+      });
+    });
+  }
+
+  document.getElementById('savePulse').addEventListener('click', () => {
+    const entry = {
+      id: 'p_' + Date.now(),
+      date: document.getElementById('pulseDate').value || todayStr(),
+      btcTrend: document.getElementById('pulseBtcTrend').value,
+      fearGreed: (() => { const v = document.getElementById('pulseFearGreed').value; return v === '' ? null : Number(v); })(),
+      dominance: document.getElementById('pulseDominance').value,
+      notes: document.getElementById('pulseNotes').value.trim()
+    };
+    const list = safeGet(LS_PULSE, []);
+    list.push(entry);
+    safeSet(LS_PULSE, list);
+    document.getElementById('pulseNotes').value = '';
+    document.getElementById('pulseFearGreed').value = '';
+    renderPulseHistory();
+  });
+
+  // ---------- COINS ----------
+  function coinEntries(coinId) {
+    const all = safeGet(LS_COINS, {});
+    return all[coinId] || [];
+  }
+  function saveCoinEntries(coinId, entries) {
+    const all = safeGet(LS_COINS, {});
+    all[coinId] = entries;
+    safeSet(LS_COINS, all);
+  }
+
+  function renderCoins() {
+    const container = document.getElementById('coinsList');
+    container.innerHTML = COINS.map(c => {
+      const entries = coinEntries(c.id);
+      const last = entries.length ? [...entries].sort((a,b) => b.date.localeCompare(a.date))[0] : null;
+      const checklistHtml = c.items.map((item, idx) => `
+        <li>
+          <label class="chk-label">
+            <input type="checkbox" data-coin="${c.id}" data-item="${idx}">
+            <span>${escapeHtml(item)}</span>
+          </label>
+        </li>
+      `).join('');
+      const historyHtml = entries.length ? [...entries].sort((a,b) => b.date.localeCompare(a.date)).map(e => `
+        <div class="history-item">
+          <div class="h-date">
+            <span>${fmtDate(e.date)} — ${e.checkedCount}/${c.items.length} مورد تایید</span>
+            <button class="del-link" data-del-entry="${c.id}|${e.id}">حذف</button>
+          </div>
+          ${e.priceLevel ? `<div style="font-family:var(--font-num); font-size:12px; color:var(--text-dim); margin-bottom:3px;">قیمت/سطح یادداشت‌شده: ${escapeHtml(e.priceLevel)}</div>` : ''}
+          ${e.notes ? `<div>${escapeHtml(e.notes)}</div>` : ''}
+        </div>
+      `).join('') : '<p class="empty-note">هنوز ثبتی برای این کوین نیست.</p>';
+
+      return `
+        <div class="coin-item" id="coin-${c.id}">
+          <div class="coin-head" data-toggle="${c.id}">
+            <div class="coin-head-left">
+              <span class="coin-symbol">${c.symbol}</span>
+              <span class="coin-title">${c.name}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="coin-last">${last ? fmtDate(last.date) : 'بدون ثبت'}</span>
+              <span class="chevron">▾</span>
+            </div>
+          </div>
+          <div class="coin-body">
+            <div class="subhead">چک‌لیست فاندامنتال این هفته</div>
+            <ul class="checklist">${checklistHtml}</ul>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label">تاریخ</label>
+                <input type="date" data-field="date" data-coin="${c.id}" value="${todayStr()}">
+              </div>
+              <div class="field-group">
+                <label class="field-label">قیمت/سطح فعلی (اختیاری)</label>
+                <input type="text" data-field="price" data-coin="${c.id}" placeholder="مثلاً 11.28">
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">یادداشت</label>
+              <textarea data-field="notes" data-coin="${c.id}" placeholder="نتیجه‌گیری این هفته..."></textarea>
+            </div>
+            <div class="btn-row">
+              <button class="btn" data-save-coin="${c.id}">ثبت این هفته</button>
+            </div>
+            <div class="subhead" style="margin-top:16px;">تاریخچه</div>
+            ${historyHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.querySelectorAll('[data-toggle]').forEach(head => {
+      head.addEventListener('click', () => {
+        document.getElementById('coin-' + head.dataset.toggle).classList.toggle('open');
+      });
+    });
+
+    container.querySelectorAll('[data-save-coin]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const coinId = btn.dataset.saveCoin;
+        const coinDef = COINS.find(c => c.id === coinId);
+        const checks = Array.from(container.querySelectorAll(`input[type="checkbox"][data-coin="${coinId}"]`));
+        const checkedCount = checks.filter(c => c.checked).length;
+        const dateVal = container.querySelector(`input[data-field="date"][data-coin="${coinId}"]`).value || todayStr();
+        const priceVal = container.querySelector(`input[data-field="price"][data-coin="${coinId}"]`).value.trim();
+        const notesVal = container.querySelector(`textarea[data-field="notes"][data-coin="${coinId}"]`).value.trim();
+
+        const entry = {
+          id: 'c_' + Date.now(),
+          date: dateVal,
+          checkedCount,
+          checkedItems: checks.map(c => c.checked),
+          priceLevel: priceVal,
+          notes: notesVal
+        };
+        const entries = coinEntries(coinId);
+        entries.push(entry);
+        saveCoinEntries(coinId, entries);
+        renderCoins();
+        // re-open the same coin after re-render
+        const el = document.getElementById('coin-' + coinId);
+        if (el) el.classList.add('open');
+      });
+    });
+
+    container.querySelectorAll('[data-del-entry]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const [coinId, entryId] = btn.dataset.delEntry.split('|');
+        const updated = coinEntries(coinId).filter(e => e.id !== entryId);
+        saveCoinEntries(coinId, updated);
+        renderCoins();
+        const el = document.getElementById('coin-' + coinId);
+        if (el) el.classList.add('open');
+      });
+    });
+  }
+
+  // ---------- TRADES ----------
+  const tradeCoinSelect = document.getElementById('tradeCoin');
+  tradeCoinSelect.innerHTML = COINS.map(c => `<option value="${c.id}">${c.name} (${c.symbol})</option>`).join('');
+  document.getElementById('tradeDate').value = todayStr();
+
+  function renderTrades() {
+    const trades = safeGet(LS_TRADES, []);
+    const open = trades.filter(t => t.status === 'open');
+    const closed = trades.filter(t => t.status === 'closed');
+
+    const openEl = document.getElementById('openTrades');
+    openEl.innerHTML = open.length ? `
+      <table>
+        <tr><th>کوین</th><th>تاریخ</th><th>نوع</th><th>قیمت</th><th>حجم</th><th></th></tr>
+        ${open.map(t => `
+          <tr>
+            <td>${coinLabel(t.coin)}</td>
+            <td>${fmtDate(t.date)}</td>
+            <td>${t.side === 'buy' ? 'خرید' : 'فروش'}</td>
+            <td style="font-family:var(--font-num);">${escapeHtml(t.price)}</td>
+            <td>${escapeHtml(t.size)}</td>
+            <td><button class="btn secondary" style="padding:5px 10px; font-size:11px;" data-close-trade="${t.id}">بستن</button></td>
+          </tr>
+          ${t.reason ? `<tr><td colspan="6" style="color:var(--text-dim); font-size:11.5px; border-bottom:1px solid var(--line);">${escapeHtml(t.reason)}</td></tr>` : ''}
+        `).join('')}
+      </table>
+    ` : '<p class="empty-note">معامله باز فعلی وجود نداره.</p>';
+
+    const closedEl = document.getElementById('closedTrades');
+    closedEl.innerHTML = closed.length ? `
+      <table>
+        <tr><th>کوین</th><th>ورود</th><th>خروج</th><th>نتیجه</th><th></th></tr>
+        ${[...closed].sort((a,b)=>b.date.localeCompare(a.date)).map(t => {
+          const pnl = (t.closePrice && t.price) ? (((Number(t.closePrice) - Number(t.price)) / Number(t.price)) * 100) : null;
+          const pnlClass = pnl === null ? '' : (pnl >= 0 ? 'status-closed-profit' : 'status-closed-loss');
+          const pnlText = pnl === null ? '—' : (pnl >= 0 ? '+' : '') + pnl.toFixed(1) + '%';
+          return `
+          <tr>
+            <td>${coinLabel(t.coin)}</td>
+            <td style="font-family:var(--font-num);">${escapeHtml(t.price)}<br><span style="color:var(--text-dim); font-size:10.5px;">${fmtDate(t.date)}</span></td>
+            <td style="font-family:var(--font-num);">${escapeHtml(t.closePrice || '—')}<br><span style="color:var(--text-dim); font-size:10.5px;">${t.closeDate ? fmtDate(t.closeDate) : ''}</span></td>
+            <td class="${pnlClass}">${pnlText}</td>
+            <td><button class="del-link" data-del-trade="${t.id}">حذف</button></td>
+          </tr>`;
+        }).join('')}
+      </table>
+    ` : '<p class="empty-note">هنوز معامله بسته‌شده‌ای ثبت نشده.</p>';
+
+    openEl.querySelectorAll('[data-close-trade]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.closeTrade;
+        const closePrice = prompt('قیمت خروج رو وارد کن:');
+        if (closePrice === null || closePrice.trim() === '') return;
+        const all = safeGet(LS_TRADES, []);
+        const idx = all.findIndex(t => t.id === id);
+        if (idx > -1) {
+          all[idx].status = 'closed';
+          all[idx].closePrice = closePrice.trim();
+          all[idx].closeDate = todayStr();
+          safeSet(LS_TRADES, all);
+          renderTrades();
+        }
+      });
+    });
+    closedEl.querySelectorAll('[data-del-trade]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.delTrade;
+        const updated = safeGet(LS_TRADES, []).filter(t => t.id !== id);
+        safeSet(LS_TRADES, updated);
+        renderTrades();
+      });
+    });
+  }
+
+  function coinLabel(id) {
+    const c = COINS.find(c => c.id === id);
+    return c ? `${c.name} (${c.symbol})` : id;
+  }
+
+  document.getElementById('saveTrade').addEventListener('click', () => {
+    const price = document.getElementById('tradePrice').value.trim();
+    if (!price) { alert('لطفاً قیمت ورود رو وارد کن.'); return; }
+    const trade = {
+      id: 't_' + Date.now(),
+      coin: document.getElementById('tradeCoin').value,
+      date: document.getElementById('tradeDate').value || todayStr(),
+      side: document.getElementById('tradeSide').value,
+      price,
+      size: document.getElementById('tradeSize').value.trim(),
+      reason: document.getElementById('tradeReason').value.trim(),
+      status: 'open',
+      closePrice: null,
+      closeDate: null
+    };
+    const trades = safeGet(LS_TRADES, []);
+    trades.push(trade);
+    safeSet(LS_TRADES, trades);
+    document.getElementById('tradePrice').value = '';
+    document.getElementById('tradeSize').value = '';
+    document.getElementById('tradeReason').value = '';
+    renderTrades();
+  });
+
+  // ---------- INIT ----------
+  renderPulseHistory();
+  renderCoins();
+  renderTrades();
+})();
+</script>
+</body>
+</html>
