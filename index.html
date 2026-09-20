@@ -142,6 +142,33 @@
     margin: 4px 0 8px;
   }
 
+  /* Gauge */
+  .gauge-block {
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px; margin-bottom: 14px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+  }
+  .gauge-svg-wrap { width: 130px; flex-shrink: 0; text-align: center; }
+  .gauge-score {
+    font-family: var(--font-num); font-size: 26px; font-weight: 700; margin-top: -34px; position: relative;
+  }
+  .gauge-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .gauge-needle { transition: transform 0.5s cubic-bezier(.4,1.4,.6,1); transform-origin: 65px 62px; }
+  .gauge-breakdown { flex: 1; min-width: 160px; }
+  .gb-row { display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 5px; }
+  .gb-row .gb-label { color: var(--text-dim); }
+  .gb-row .gb-val { font-family: var(--font-num); font-weight: 600; }
+  .gb-track { height: 5px; background: var(--surface-3); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+  .gb-fill { height: 100%; border-radius: 3px; }
+  .market-context {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px;
+    border-top: 1px dashed var(--line);
+  }
+  .ctx-badge {
+    font-size: 10.5px; font-family: var(--font-num); padding: 3px 8px; border-radius: 20px;
+    background: var(--surface-3); color: var(--text-dim); border: 1px solid var(--line);
+  }
+  .gauge-note { font-size: 10.5px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
+
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   th, td { text-align: right; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
   th { color: var(--text-dim); font-weight: 600; font-size: 11px; }
@@ -449,6 +476,7 @@
     document.getElementById('pulseNotes').value = '';
     document.getElementById('pulseFearGreed').value = '';
     renderPulseHistory();
+    COINS.forEach(c => renderGaugeFor(c.id));
   });
 
   // ---------- COINS ----------
@@ -460,6 +488,151 @@
     const all = safeGet(LS_COINS, {});
     all[coinId] = entries;
     safeSet(LS_COINS, all);
+  }
+
+  // ---------- SCORING & GAUGE ----------
+  function numOrNull(v) {
+    if (v === '' || v === null || v === undefined) return null;
+    const n = Number(v);
+    return isNaN(n) ? null : n;
+  }
+
+  function readTechFields(coinId) {
+    const get = (field) => {
+      const el = document.querySelector(`input[data-field="${field}"][data-coin="${coinId}"]`);
+      return el ? numOrNull(el.value) : null;
+    };
+    return { price: get('price'), ma50: get('ma50'), ma200: get('ma200'), support: get('support'), resistance: get('resistance'), volume: get('volume') };
+  }
+
+  function lastSavedEntry(coinId) {
+    const entries = coinEntries(coinId);
+    if (!entries.length) return null;
+    return [...entries].sort((a,b) => b.date.localeCompare(a.date))[0];
+  }
+
+  function latestPulse() {
+    const list = safeGet(LS_PULSE, []);
+    if (!list.length) return null;
+    return [...list].sort((a,b) => b.date.localeCompare(a.date))[0];
+  }
+
+  function weightedAvg(parts) {
+    const avail = parts.filter(p => p.score !== null);
+    if (!avail.length) return 0;
+    const totalWeight = avail.reduce((s,p) => s + p.weight, 0);
+    return avail.reduce((s,p) => s + p.score * p.weight, 0) / totalWeight;
+  }
+
+  // Returns { fundScore, techScore, volScore, volDetail, total(0-100) }
+  function computeScore(coinId) {
+    const checks = Array.from(document.querySelectorAll(`input[type="checkbox"][data-coin="${coinId}"]`));
+    const fundScore = checks.length ? checks.filter(c => c.checked).length / checks.length : null;
+
+    const t = readTechFields(coinId);
+    let techPoints = 0, techMax = 0;
+    if (t.price !== null && t.ma50 !== null) { techMax += 1; if (t.price > t.ma50) techPoints += 1; }
+    if (t.price !== null && t.ma200 !== null) { techMax += 1; if (t.price > t.ma200) techPoints += 1; }
+    if (t.price !== null && t.support !== null && t.resistance !== null && t.resistance > t.support) {
+      techMax += 1;
+      const pos = (t.price - t.support) / (t.resistance - t.support);
+      techPoints += Math.max(0, Math.min(1, 1 - pos));
+    }
+    const techScore = techMax > 0 ? techPoints / techMax : null;
+
+    // Volume confirmation vs last saved entry
+    let volScore = null, volDetail = null;
+    const prev = lastSavedEntry(coinId);
+    if (prev && prev.price !== undefined && prev.price !== null && prev.volume !== undefined && prev.volume !== null
+        && t.price !== null && t.volume !== null) {
+      const priceUp = t.price > prev.price;
+      const priceDown = t.price < prev.price;
+      const volUp = t.volume > prev.volume;
+      if (priceUp && volUp) { volScore = 1; volDetail = 'روند صعودی با افزایش حجم تایید شده'; }
+      else if (priceUp && !volUp) { volScore = 0.35; volDetail = 'رشد قیمت با حجم ضعیف — کمتر قابل اتکا'; }
+      else if (priceDown && volUp) { volScore = 0.3; volDetail = 'افت قیمت با حجم بالا — فشار فروش واقعی'; }
+      else if (priceDown && !volUp) { volScore = 0.6; volDetail = 'افت قیمت با حجم پایین — احتمال ضعیف شدن فشار فروش'; }
+      else { volScore = 0.5; volDetail = 'قیمت تقریباً بدون تغییر'; }
+    }
+
+    const total = weightedAvg([
+      { score: fundScore, weight: 0.4 },
+      { score: techScore, weight: 0.4 },
+      { score: volScore, weight: 0.2 }
+    ]);
+
+    return { fundScore, techScore, volScore, volDetail, total: Math.round(total * 100) };
+  }
+
+  function scoreColor(score) {
+    if (score >= 66) return 'var(--up)';
+    if (score >= 40) return 'var(--neutral)';
+    return 'var(--down)';
+  }
+  function scoreWord(score) {
+    if (score >= 66) return 'آماده ورود';
+    if (score >= 40) return 'خنثی / احتیاط';
+    return 'صبر کن';
+  }
+
+  function gaugeSvg(coinId) {
+    // semi-circle gauge, needle rotates -90deg (score 0) to +90deg (score 100)
+    return `
+      <svg width="130" height="80" viewBox="0 0 130 80">
+        <path d="M 10 62 A 55 55 0 0 1 45.6 15.5" fill="none" stroke="#F87171" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 47.5 14.3 A 55 55 0 0 1 82.5 14.3" fill="none" stroke="#F5A623" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 84.4 15.5 A 55 55 0 0 1 120 62" fill="none" stroke="#4ADE80" stroke-width="10" stroke-linecap="round"/>
+        <g class="gauge-needle" id="needle-${coinId}">
+          <line x1="65" y1="62" x2="65" y2="16" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </g>
+        <circle cx="65" cy="62" r="5" fill="currentColor"/>
+      </svg>
+      <div class="gauge-score" id="score-text-${coinId}" style="color:var(--text-dim);">—</div>
+      <div class="gauge-label" id="score-word-${coinId}"></div>
+    `;
+  }
+
+  function pulseCtxLabel(p) {
+    if (!p) return [];
+    const trend = p.btcTrend === 'above' ? 'BTC بالای MA200' : p.btcTrend === 'below' ? 'BTC زیر MA200' : 'BTC نزدیک MA200';
+    const fg = (p.fearGreed !== null && p.fearGreed !== undefined) ? `ترس‌وطمع: ${p.fearGreed}` : null;
+    const dom = p.dominance === 'up' ? 'دامیننس ↑' : p.dominance === 'down' ? 'دامیننس ↓' : 'دامیننس ثابت';
+    return [trend, fg, dom].filter(Boolean);
+  }
+
+  function renderGaugeFor(coinId) {
+    const result = computeScore(coinId);
+    const needle = document.getElementById('needle-' + coinId);
+    const scoreText = document.getElementById('score-text-' + coinId);
+    const scoreWordEl = document.getElementById('score-word-' + coinId);
+    const breakdownEl = document.getElementById('gauge-breakdown-' + coinId);
+    if (!needle || !scoreText || !breakdownEl) return;
+
+    const angle = -90 + (result.total / 100) * 180;
+    needle.style.transform = `rotate(${angle}deg)`;
+    needle.style.color = scoreColor(result.total);
+    scoreText.textContent = result.total;
+    scoreText.style.color = scoreColor(result.total);
+    scoreWordEl.textContent = scoreWord(result.total);
+
+    const fundPct = result.fundScore === null ? 0 : Math.round(result.fundScore * 100);
+    const techPct = result.techScore === null ? 0 : Math.round(result.techScore * 100);
+    const volPct = result.volScore === null ? 0 : Math.round(result.volScore * 100);
+    const p = latestPulse();
+    const ctxBadges = pulseCtxLabel(p);
+
+    breakdownEl.innerHTML = `
+      <div class="gb-row"><span class="gb-label">فاندامنتال (چک‌لیست)</span><span class="gb-val">${result.fundScore === null ? '—' : fundPct + '%'}</span></div>
+      <div class="gb-track"><div class="gb-fill" style="width:${fundPct}%; background:var(--accent);"></div></div>
+      <div class="gb-row"><span class="gb-label">تکنیکال (MA / حمایت‌مقاومت)</span><span class="gb-val">${result.techScore === null ? 'داده ناقص' : techPct + '%'}</span></div>
+      <div class="gb-track"><div class="gb-fill" style="width:${techPct}%; background:var(--accent);"></div></div>
+      <div class="gb-row"><span class="gb-label">تایید حجم (نسبت به هفته قبل)</span><span class="gb-val">${result.volScore === null ? 'داده ناقص' : volPct + '%'}</span></div>
+      <div class="gb-track"><div class="gb-fill" style="width:${volPct}%; background:var(--accent);"></div></div>
+      ${result.volDetail ? `<div style="font-size:11px; color:var(--text-dim); margin-bottom:8px;">${escapeHtml(result.volDetail)}</div>` : (result.volScore === null ? '<div style="font-size:11px; color:var(--text-dim); margin-bottom:8px;">برای این بخش، هم باید هفته قبل رو ثبت کرده باشی هم الان قیمت و حجم رو وارد کنی.</div>' : '')}
+      <div class="market-context">
+        ${ctxBadges.length ? ctxBadges.map(b => `<span class="ctx-badge">${escapeHtml(b)}</span>`).join('') : '<span class="ctx-badge">هنوز پالس بازار ثبت نشده</span>'}
+      </div>
+    `;
   }
 
   function renderCoins() {
@@ -478,10 +651,10 @@
       const historyHtml = entries.length ? [...entries].sort((a,b) => b.date.localeCompare(a.date)).map(e => `
         <div class="history-item">
           <div class="h-date">
-            <span>${fmtDate(e.date)} — ${e.checkedCount}/${c.items.length} مورد تایید</span>
+            <span>${fmtDate(e.date)} — ${e.checkedCount}/${c.items.length} مورد تایید${e.score !== undefined && e.score !== null ? ` · امتیاز ${e.score}` : ''}</span>
             <button class="del-link" data-del-entry="${c.id}|${e.id}">حذف</button>
           </div>
-          ${e.priceLevel ? `<div style="font-family:var(--font-num); font-size:12px; color:var(--text-dim); margin-bottom:3px;">قیمت/سطح یادداشت‌شده: ${escapeHtml(e.priceLevel)}</div>` : ''}
+          ${e.price ? `<div style="font-family:var(--font-num); font-size:12px; color:var(--text-dim); margin-bottom:3px;">قیمت ثبت‌شده: ${escapeHtml(e.price)}</div>` : ''}
           ${e.notes ? `<div>${escapeHtml(e.notes)}</div>` : ''}
         </div>
       `).join('') : '<p class="empty-note">هنوز ثبتی برای این کوین نیست.</p>';
@@ -499,18 +672,54 @@
             </div>
           </div>
           <div class="coin-body">
-            <div class="subhead">چک‌لیست فاندامنتال این هفته</div>
+            <div class="subhead">گیج آماده‌بودن ورود</div>
+            <div class="gauge-block" id="gauge-${c.id}">
+              <div class="gauge-svg-wrap">
+                ${gaugeSvg(c.id)}
+              </div>
+              <div class="gauge-breakdown" id="gauge-breakdown-${c.id}"></div>
+            </div>
+            <p class="gauge-note">امتیاز از ترکیب چک‌لیست فاندامنتال (۴۰٪)، وضعیت تکنیکال قیمت نسبت به میانگین‌ها و حمایت/مقاومت (۴۰٪)، و تایید حجم معاملات نسبت به هفته قبل (۲۰٪) ساخته می‌شه. این یه ابزار کمکی برای دیدن ترکیب معیارهاته، نه توصیه مالی — وضعیت کلی بازار رو هم پایین همین کارت می‌بینی و طبق جدولی که قبلاً ساختیم، خودت دستی وزنش کن.</p>
+
+            <div class="subhead" style="margin-top:14px;">چک‌لیست فاندامنتال این هفته</div>
             <ul class="checklist">${checklistHtml}</ul>
+
+            <div class="subhead">داده‌های تکنیکال (اختیاری، هرچی پرکنی گیج دقیق‌تر می‌شه)</div>
             <div class="field-row">
+              <div class="field-group">
+                <label class="field-label">قیمت فعلی</label>
+                <input type="number" step="any" data-field="price" data-coin="${c.id}" placeholder="مثلاً 11.28">
+              </div>
               <div class="field-group">
                 <label class="field-label">تاریخ</label>
                 <input type="date" data-field="date" data-coin="${c.id}" value="${todayStr()}">
               </div>
+            </div>
+            <div class="field-row">
               <div class="field-group">
-                <label class="field-label">قیمت/سطح فعلی (اختیاری)</label>
-                <input type="text" data-field="price" data-coin="${c.id}" placeholder="مثلاً 11.28">
+                <label class="field-label">میانگین ۵۰ روزه</label>
+                <input type="number" step="any" data-field="ma50" data-coin="${c.id}" placeholder="اختیاری">
+              </div>
+              <div class="field-group">
+                <label class="field-label">میانگین ۲۰۰ روزه</label>
+                <input type="number" step="any" data-field="ma200" data-coin="${c.id}" placeholder="اختیاری">
               </div>
             </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label">سطح حمایت</label>
+                <input type="number" step="any" data-field="support" data-coin="${c.id}" placeholder="اختیاری">
+              </div>
+              <div class="field-group">
+                <label class="field-label">سطح مقاومت</label>
+                <input type="number" step="any" data-field="resistance" data-coin="${c.id}" placeholder="اختیاری">
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">حجم معاملات ۲۴ ساعته (دلار)</label>
+              <input type="number" step="any" data-field="volume" data-coin="${c.id}" placeholder="مثلاً 449000000">
+            </div>
+
             <div class="field-group">
               <label class="field-label">یادداشت</label>
               <textarea data-field="notes" data-coin="${c.id}" placeholder="نتیجه‌گیری این هفته..."></textarea>
@@ -534,19 +743,21 @@
     container.querySelectorAll('[data-save-coin]').forEach(btn => {
       btn.addEventListener('click', () => {
         const coinId = btn.dataset.saveCoin;
-        const coinDef = COINS.find(c => c.id === coinId);
         const checks = Array.from(container.querySelectorAll(`input[type="checkbox"][data-coin="${coinId}"]`));
         const checkedCount = checks.filter(c => c.checked).length;
         const dateVal = container.querySelector(`input[data-field="date"][data-coin="${coinId}"]`).value || todayStr();
-        const priceVal = container.querySelector(`input[data-field="price"][data-coin="${coinId}"]`).value.trim();
         const notesVal = container.querySelector(`textarea[data-field="notes"][data-coin="${coinId}"]`).value.trim();
+        const tech = readTechFields(coinId);
+        const scoreResult = computeScore(coinId);
 
         const entry = {
           id: 'c_' + Date.now(),
           date: dateVal,
           checkedCount,
           checkedItems: checks.map(c => c.checked),
-          priceLevel: priceVal,
+          price: tech.price, ma50: tech.ma50, ma200: tech.ma200,
+          support: tech.support, resistance: tech.resistance, volume: tech.volume,
+          score: scoreResult.total,
           notes: notesVal
         };
         const entries = coinEntries(coinId);
@@ -557,6 +768,15 @@
         const el = document.getElementById('coin-' + coinId);
         if (el) el.classList.add('open');
       });
+    });
+
+    // live gauge updates as inputs change (before saving)
+    COINS.forEach(c => {
+      container.querySelectorAll(`input[data-coin="${c.id}"]`).forEach(inp => {
+        inp.addEventListener('input', () => renderGaugeFor(c.id));
+        inp.addEventListener('change', () => renderGaugeFor(c.id));
+      });
+      renderGaugeFor(c.id);
     });
 
     container.querySelectorAll('[data-del-entry]').forEach(btn => {
