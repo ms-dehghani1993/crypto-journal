@@ -129,12 +129,25 @@
   .coin-item.open .coin-body { display: block; padding-top: 14px; }
 
   .checklist { list-style: none; padding: 0; margin: 0 0 12px; }
-  .checklist li { margin-bottom: 8px; }
+  .checklist li { margin-bottom: 10px; }
+  .chk-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
   .chk-label {
-    display: flex; align-items: flex-start; gap: 9px; font-size: 13.5px; cursor: pointer;
+    display: flex; align-items: flex-start; gap: 9px; font-size: 13.5px; cursor: pointer; flex: 1;
   }
   .chk-label input[type="checkbox"] {
     width: 17px; height: 17px; margin-top: 1px; accent-color: var(--accent); flex-shrink: 0;
+  }
+  .chk-label input[type="checkbox"]:disabled { opacity: 0.75; }
+  .auto-tag { font-size: 10.5px; color: var(--accent); }
+  .src-toggle {
+    background: none; border: 1px solid var(--line); color: var(--text-dim);
+    font-family: var(--font-ui); font-size: 10.5px; padding: 2px 8px; border-radius: 20px;
+    cursor: pointer; flex-shrink: 0; white-space: nowrap;
+  }
+  .src-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .src-note {
+    font-size: 11.5px; color: var(--text-dim); background: var(--surface-2); border-radius: 6px;
+    padding: 8px 10px; margin-top: 6px; margin-right: 26px; line-height: 1.6;
   }
 
   .subhead {
@@ -337,64 +350,104 @@
   // ---------- COIN DEFINITIONS ----------
   const COINS = [
     { id: 'btc', symbol: 'BTC', name: 'بیت‌کوین', items: [
-      'قیمت بالای میانگین ۲۰۰ روزه است',
-      'جریان ETF ها مثبت بوده (ورودی، نه خروجی)',
-      'دامیننس بیت‌کوین در حال افزایش است',
-      'خبر نظارتی مهمی (مثبت/منفی) منتشر شده'
+      { label: 'قیمت بالای میانگین ۲۰۰ روزه است',
+        source: 'از همون فیلد "میانگین ۲۰۰ روزه" که پایین‌تر در همین کارت وارد می‌کنی محاسبه می‌شه. برای پیدا کردن عددش: TradingView یا CoinGecko را باز کن، نمودار قیمت رو روی بازه ۱ ساله بذار و اندیکاتور MA(200) رو اضافه کن.' },
+      { label: 'جریان ETF ها مثبت بوده (ورودی، نه خروجی)',
+        source: 'سایت‌های تخصصی رصد ETF بیت‌کوین مثل Farside Investors (farside.co.uk) یا SoSoValue (sosovalue.com) — این سایت‌ها جریان روزانه/هفتگی ورود و خروج سرمایه از صندوق‌های ETF بیت‌کوین رو نشون می‌دن.' },
+      { label: 'دامیننس بیت‌کوین در حال افزایش است', auto: 'dominance',
+        source: 'خودکار از آخرین «پالس بازار» محاسبه می‌شه — چیزی لازم نیست اینجا وارد کنی، فقط عدد دامیننس رو توی تب پالس بازار ثبت کن.' },
+      { label: 'خبر نظارتی مهمی (مثبت/منفی) منتشر شده',
+        source: 'تب News خود اپ CoinGecko/CoinMarketCap برای بیت‌کوین، یا خبرگزاری‌های تخصصی مثل CoinDesk و The Block.' }
     ]},
     { id: 'eth', symbol: 'ETH', name: 'اتریوم', items: [
-      'TVL اکوسیستم نسبت به ماه قبل رشد کرده',
-      'نرخ استیکینگ پایدار یا در حال رشد است',
-      'فعالیت L2 ها (آربیتروم، بیس و...) بالاست',
-      'کارمزد گس در محدوده معقول است'
+      { label: 'TVL اکوسیستم نسبت به ماه قبل رشد کرده',
+        source: 'DefiLlama (defillama.com) → صفحه زنجیره Ethereum. عدد TVL و تغییرات ۳۰ روزه‌ش مستقیم همون‌جا نشون داده می‌شه.' },
+      { label: 'نرخ استیکینگ پایدار یا در حال رشد است',
+        source: 'سایت‌هایی مثل beaconcha.in یا StakingRewards.com — درصد ETH استیک‌شده از کل عرضه رو نشون می‌دن.' },
+      { label: 'فعالیت L2 ها (آربیتروم، بیس و...) بالاست',
+        source: 'L2Beat.com — نمودار TVL و تعداد تراکنش روزانه شبکه‌های لایه‌دوم اتریوم رو کنار هم می‌بینی.' },
+      { label: 'کارمزد گس در محدوده معقول است',
+        source: 'Etherscan Gas Tracker (etherscan.io/gastracker) — قیمت گس فعلی به Gwei رو لحظه‌ای نشون می‌ده.' }
     ]},
     { id: 'sol', symbol: 'SOL', name: 'سولانا', items: [
-      'TVL و فعالیت DeFi در حال رشد است',
-      'قطعی یا مشکل فنی جدیدی برای شبکه گزارش نشده',
-      'فعالیت توسعه‌دهندگان بالاست',
-      'خبر مهمی درباره unlock توکن یا فشار عرضه نبوده'
+      { label: 'TVL و فعالیت DeFi در حال رشد است',
+        source: 'DefiLlama (defillama.com) → صفحه زنجیره Solana.' },
+      { label: 'قطعی یا مشکل فنی جدیدی برای شبکه گزارش نشده',
+        source: 'Solana Status (status.solana.com) یا تب News کوین‌گکو برای سولانا — قطعی‌های اخیر شبکه معمولاً سریع خبر می‌شن.' },
+      { label: 'فعالیت توسعه‌دهندگان بالاست',
+        source: 'گزارش سالانه Electric Capital (Developer Report) یا مخزن رسمی سولانا روی گیت‌هاب — این معیار بیشتر ماهانه/فصلی معنا داره تا هفتگی.' },
+      { label: 'خبر مهمی درباره unlock توکن یا فشار عرضه نبوده',
+        source: 'سایت Token Unlocks (token.unlocks.app) — تقویم آزادسازی توکن پروژه‌های مختلف از جمله سولانا رو نشون می‌ده.' }
     ]},
     { id: 'link', symbol: 'LINK', name: 'چین‌لینک', items: [
-      'TVS (در DefiLlama) نسبت به ماه قبل رشد کرده',
-      'حجم CCIP رو به رشد است',
-      'خبر مشارکت یا یکپارچگی جدید منتشر شده',
-      'جریان ETF/نهادی LINK پایدار یا مثبت است'
+      { label: 'TVS (در DefiLlama) نسبت به ماه قبل رشد کرده',
+        source: 'DefiLlama (defillama.com) → بخش Oracles یا صفحه اختصاصی Chainlink. عدد TVS و تغییرات ماهانه‌ش اونجاست.' },
+      { label: 'حجم CCIP رو به رشد است',
+        source: 'CCIP Explorer (ccip.chain.link) — حجم انتقال و تعداد تراکنش‌های بین‌زنجیره‌ای رو نشون می‌ده.' },
+      { label: 'خبر مشارکت یا یکپارچگی جدید منتشر شده',
+        source: 'وبلاگ رسمی Chainlink (blog.chain.link) یا تب News کوین‌گکو برای LINK.' },
+      { label: 'جریان ETF/نهادی LINK پایدار یا مثبت است',
+        source: 'SoSoValue (sosovalue.com) یا اخبار مالی تخصصی — چون ETF های LINK نسبت به بیت‌کوین جدیدترن، ممکنه دیتای اختصاصی‌شون همه‌جا موجود نباشه؛ تب News خود کوین‌گکو معمولاً این‌جور اخبار رو منعکس می‌کنه.' }
     ]},
     { id: 'ada', symbol: 'ADA', name: 'کاردانو', items: [
-      'آپدیت نقشه راه طبق برنامه اجرا شده',
-      'فعالیت GitHub/توسعه‌دهندگان قابل توجه بوده',
-      'پروژه جدیدی به اکوسیستم اضافه شده',
-      'خبر نظارتی یا مشارکتی مهمی بوده'
+      { label: 'آپدیت نقشه راه طبق برنامه اجرا شده',
+        source: 'سایت رسمی نقشه راه کاردانو (roadmap.cardano.org) که وضعیت هر فاز توسعه رو نشون می‌ده.' },
+      { label: 'فعالیت GitHub/توسعه‌دهندگان قابل توجه بوده',
+        source: 'مخزن رسمی کاردانو روی گیت‌هاب (جستجو کن "Cardano node github") — تعداد commit و release های اخیر رو می‌بینی.' },
+      { label: 'پروژه جدیدی به اکوسیستم اضافه شده',
+        source: 'DefiLlama → صفحه زنجیره Cardano، یا سایت‌های نقشه اکوسیستم کاردانو که پروژه‌های فعال رو لیست می‌کنن.' },
+      { label: 'خبر نظارتی یا مشارکتی مهمی بوده',
+        source: 'تب News کوین‌گکو برای ADA یا خبرگزاری‌های تخصصی کریپتو.' }
     ]},
     { id: 'xrp', symbol: 'XRP', name: 'اکس‌آرپی', items: [
-      'وضعیت حقوقی/نظارتی بدون تغییر منفی مانده',
-      'حجم ODL یا پرداخت‌های بین‌بانکی رشد داشته',
-      'مشارکت بانکی یا نهادی جدیدی اعلام شده',
-      'جریان ETF (در صورت وجود) پایدار یا مثبت بوده'
+      { label: 'وضعیت حقوقی/نظارتی بدون تغییر منفی مانده',
+        source: 'خبرگزاری‌های مالی/حقوقی مثل CoinDesk یا Reuters — برای پرونده‌های حقوقی مرتبط با ریپل و SEC جستجو کن.' },
+      { label: 'حجم ODL یا پرداخت‌های بین‌بانکی رشد داشته',
+        source: 'وبلاگ رسمی Ripple (ripple.com/insights) — گزارش‌های دوره‌ای درباره حجم و مشتریان On-Demand Liquidity منتشر می‌کنه.' },
+      { label: 'مشارکت بانکی یا نهادی جدیدی اعلام شده',
+        source: 'صفحه رسمی مشتریان Ripple (ripple.com/customers) یا تب News کوین‌گکو برای XRP.' },
+      { label: 'جریان ETF (در صورت وجود) پایدار یا مثبت بوده',
+        source: 'SoSoValue (sosovalue.com) — در صورت وجود صندوق ETF فعال روی XRP، جریان ورود/خروجش رو نشون می‌ده.' }
     ]},
     { id: 'bnb', symbol: 'BNB', name: 'بی‌ان‌بی', items: [
-      'حجم معاملات صرافی بایننس بالا مانده',
-      'TVL شبکه BNB Chain رشد کرده',
-      'رویداد سوزاندن توکن (burn) اخیر انجام شده',
-      'خبر نظارتی مرتبط با بایننس منتشر نشده'
+      { label: 'حجم معاملات صرافی بایننس بالا مانده',
+        source: 'رتبه‌بندی صرافی‌ها در CoinGecko یا CoinMarketCap (بخش Exchanges) — حجم معاملات بایننس نسبت به رقبا رو نشون می‌ده.' },
+      { label: 'TVL شبکه BNB Chain رشد کرده',
+        source: 'DefiLlama (defillama.com) → صفحه زنجیره BNB Chain.' },
+      { label: 'رویداد سوزاندن توکن (burn) اخیر انجام شده',
+        source: 'وبلاگ رسمی بایننس (binance.com/en/blog) — رویدادهای فصلی BNB Burn رو رسماً اعلام می‌کنه.' },
+      { label: 'خبر نظارتی مرتبط با بایننس منتشر نشده',
+        source: 'تب News کوین‌گکو برای BNB یا خبرگزاری‌های مالی تخصصی.' }
     ]},
     { id: 'avax', symbol: 'AVAX', name: 'آوالانچ', items: [
-      'TVL و تعداد subnet های فعال رشد کرده',
-      'پروژه RWA یا نهادی جدیدی معرفی شده',
-      'فعالیت توسعه‌دهندگان قابل توجه بوده',
-      'خبر مشارکت مهمی در این هفته بوده'
+      { label: 'TVL و تعداد subnet های فعال رشد کرده',
+        source: 'DefiLlama (defillama.com) → صفحه زنجیره Avalanche، برای subnet ها هم سایت رسمی avax.network رو چک کن.' },
+      { label: 'پروژه RWA یا نهادی جدیدی معرفی شده',
+        source: 'وبلاگ رسمی آوالانچ (avax.network/blog) یا تب News کوین‌گکو برای AVAX.' },
+      { label: 'فعالیت توسعه‌دهندگان قابل توجه بوده',
+        source: 'مخزن رسمی Ava Labs روی گیت‌هاب (جستجو کن "avalanchego github").' },
+      { label: 'خبر مشارکت مهمی در این هفته بوده',
+        source: 'تب News کوین‌گکو برای AVAX یا خبرگزاری‌های تخصصی کریپتو.' }
     ]},
     { id: 'sui', symbol: 'SUI', name: 'سوی', items: [
-      'TVL و رشد اکوسیستم مثبت بوده',
-      'فعالیت توسعه‌دهندگان بالاست',
-      'خبر لیستینگ یا مشارکت جدیدی منتشر شده',
-      'مشکل یا قطعی شبکه‌ای گزارش نشده'
+      { label: 'TVL و رشد اکوسیستم مثبت بوده',
+        source: 'DefiLlama (defillama.com) → صفحه زنجیره Sui.' },
+      { label: 'فعالیت توسعه‌دهندگان بالاست',
+        source: 'مخزن رسمی Sui روی گیت‌هاب (جستجو کن "Sui blockchain github"، توسعه‌دهنده اصلیش Mysten Labs هست).' },
+      { label: 'خبر لیستینگ یا مشارکت جدیدی منتشر شده',
+        source: 'تب News کوین‌گکو برای SUI یا وبلاگ رسمی پروژه.' },
+      { label: 'مشکل یا قطعی شبکه‌ای گزارش نشده',
+        source: 'تب News کوین‌گکو برای SUI — قطعی‌های شبکه معمولاً سریع پوشش خبری می‌گیرن.' }
     ]},
     { id: 'doge', symbol: 'DOGE', name: 'دوج‌کوین', items: [
-      'بازار کلی در فاز ترس شدید یا طمع شدید نیست',
-      'حجم معاملات نسبت به میانگین طبیعی است',
-      'خبر یا حمایت مشهور جدیدی منتشر نشده/شده',
-      'قیمت هنوز در محدوده ۰.۰۵ تا ۰.۰۷ معتبر است'
+      { label: 'بازار کلی در فاز ترس شدید یا طمع شدید نیست',
+        source: 'از همون تب «پالس بازار» همین دفترچه — عدد ترس‌وطمعی که اونجا ثبت می‌کنی رو مبنا قرار بده.' },
+      { label: 'حجم معاملات نسبت به میانگین طبیعی است',
+        source: 'از همون فیلد «حجم معاملات ۲۴ ساعته» که پایین‌تر در همین کارت وارد می‌کنی و با هفته قبل مقایسه می‌شه (بخش «تایید حجم» در گیج).' },
+      { label: 'خبر یا حمایت مشهور جدیدی منتشر نشده/شده',
+        source: 'تب News کوین‌گکو برای DOGE — دوج‌کوین معمولاً به توییت‌ها و اخبار افراد مشهور خیلی حساسه.' },
+      { label: 'قیمت هنوز در محدوده ۰.۰۵ تا ۰.۰۷ معتبر است',
+        source: 'از همون فیلد «قیمت فعلی» که پایین‌تر در همین کارت وارد می‌کنی — فقط ببین نسبت به سطوح خودت (۰.۰۵/۰.۰۶/۰.۰۷) کجا ایستاده.' }
     ]}
   ];
 
@@ -492,6 +545,7 @@
     document.getElementById('pulseFearGreed').value = '';
     document.getElementById('pulseDominance').value = '';
     renderPulseHistory();
+    syncAutoChecklistItems();
     COINS.forEach(c => renderGaugeFor(c.id));
   });
 
@@ -653,19 +707,41 @@
     `;
   }
 
+  function syncAutoChecklistItems() {
+    const p = latestPulse();
+    COINS.forEach(c => {
+      c.items.forEach((item, idx) => {
+        if (item.auto === 'dominance') {
+          const cb = document.querySelector(`input[type="checkbox"][data-coin="${c.id}"][data-item="${idx}"]`);
+          if (cb) cb.checked = !!(p && p.dominanceTrend === 'up');
+        }
+      });
+    });
+  }
+
   function renderCoins() {
     const container = document.getElementById('coinsList');
     container.innerHTML = COINS.map(c => {
       const entries = coinEntries(c.id);
       const last = entries.length ? [...entries].sort((a,b) => b.date.localeCompare(a.date))[0] : null;
-      const checklistHtml = c.items.map((item, idx) => `
+      const checklistHtml = c.items.map((item, idx) => {
+        const isAuto = !!item.auto;
+        const autoChecked = isAuto && item.auto === 'dominance'
+          ? (() => { const p = latestPulse(); return p && p.dominanceTrend === 'up'; })()
+          : false;
+        return `
         <li>
-          <label class="chk-label">
-            <input type="checkbox" data-coin="${c.id}" data-item="${idx}">
-            <span>${escapeHtml(item)}</span>
-          </label>
+          <div class="chk-row">
+            <label class="chk-label">
+              <input type="checkbox" data-coin="${c.id}" data-item="${idx}" ${isAuto ? 'disabled' : ''} ${isAuto && autoChecked ? 'checked' : ''}>
+              <span>${escapeHtml(item.label)}${isAuto ? ' <span class="auto-tag">(خودکار)</span>' : ''}</span>
+            </label>
+            ${isAuto ? '' : `<button type="button" class="src-toggle" data-src-toggle="${c.id}-${idx}">منبع؟</button>`}
+          </div>
+          <div class="src-note" id="src-${c.id}-${idx}" style="${isAuto ? '' : 'display:none;'}">${escapeHtml(item.source)}</div>
         </li>
-      `).join('');
+      `;
+      }).join('');
       const historyHtml = entries.length ? [...entries].sort((a,b) => b.date.localeCompare(a.date)).map(e => `
         <div class="history-item">
           <div class="h-date">
@@ -755,6 +831,14 @@
     container.querySelectorAll('[data-toggle]').forEach(head => {
       head.addEventListener('click', () => {
         document.getElementById('coin-' + head.dataset.toggle).classList.toggle('open');
+      });
+    });
+
+    container.querySelectorAll('[data-src-toggle]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const note = document.getElementById('src-' + btn.dataset.srcToggle);
+        if (note) note.style.display = note.style.display === 'none' ? 'block' : 'none';
       });
     });
 
