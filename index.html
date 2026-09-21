@@ -222,12 +222,8 @@
           <input type="number" id="pulseFearGreed" min="0" max="100" placeholder="مثلاً 23">
         </div>
         <div class="field-group">
-          <label class="field-label">روند دامیننس بیت‌کوین</label>
-          <select id="pulseDominance">
-            <option value="up">در حال افزایش</option>
-            <option value="flat">ثابت</option>
-            <option value="down">در حال کاهش</option>
-          </select>
+          <label class="field-label">دامیننس بیت‌کوین (٪)</label>
+          <input type="number" step="any" id="pulseDominance" placeholder="مثلاً 57.2">
         </div>
       </div>
       <div class="field-group">
@@ -430,8 +426,14 @@
   function trendLabel(v) {
     return v === 'above' ? 'بالای MA200' : v === 'below' ? 'زیر MA200' : 'نزدیک MA200';
   }
-  function domLabel(v) {
-    return v === 'up' ? 'دامیننس در حال افزایش' : v === 'down' ? 'دامیننس در حال کاهش' : 'دامیننس ثابت';
+  function domLabel(entry) {
+    const val = entry.dominanceValue;
+    const trend = entry.dominanceTrend;
+    const valText = (val !== null && val !== undefined) ? `${val}٪` : '—';
+    if (trend === 'up') return `دامیننس ${valText} (در حال افزایش)`;
+    if (trend === 'down') return `دامیننس ${valText} (در حال کاهش)`;
+    if (trend === 'flat') return `دامیننس ${valText} (ثابت)`;
+    return `دامیننس ${valText}`;
   }
 
   function renderPulseHistory() {
@@ -442,7 +444,7 @@
     el.innerHTML = sorted.map(p => `
       <div class="history-item">
         <div class="h-date">
-          <span>${fmtDate(p.date)} — ${trendLabel(p.btcTrend)} · ${domLabel(p.dominance)}</span>
+          <span>${fmtDate(p.date)} — ${trendLabel(p.btcTrend)} · ${domLabel(p)}</span>
           <button class="del-link" data-del-pulse="${p.id}">حذف</button>
         </div>
         <div style="margin-bottom:4px;">
@@ -462,19 +464,33 @@
   }
 
   document.getElementById('savePulse').addEventListener('click', () => {
+    const list = safeGet(LS_PULSE, []);
+    const prev = list.length ? [...list].sort((a,b) => b.date.localeCompare(a.date))[0] : null;
+
+    const domRaw = document.getElementById('pulseDominance').value;
+    const dominanceValue = domRaw === '' ? null : Number(domRaw);
+    let dominanceTrend = null;
+    if (dominanceValue !== null && prev && prev.dominanceValue !== null && prev.dominanceValue !== undefined) {
+      const diff = dominanceValue - prev.dominanceValue;
+      if (diff > 0.3) dominanceTrend = 'up';
+      else if (diff < -0.3) dominanceTrend = 'down';
+      else dominanceTrend = 'flat';
+    }
+
     const entry = {
       id: 'p_' + Date.now(),
       date: document.getElementById('pulseDate').value || todayStr(),
       btcTrend: document.getElementById('pulseBtcTrend').value,
       fearGreed: (() => { const v = document.getElementById('pulseFearGreed').value; return v === '' ? null : Number(v); })(),
-      dominance: document.getElementById('pulseDominance').value,
+      dominanceValue,
+      dominanceTrend,
       notes: document.getElementById('pulseNotes').value.trim()
     };
-    const list = safeGet(LS_PULSE, []);
     list.push(entry);
     safeSet(LS_PULSE, list);
     document.getElementById('pulseNotes').value = '';
     document.getElementById('pulseFearGreed').value = '';
+    document.getElementById('pulseDominance').value = '';
     renderPulseHistory();
     COINS.forEach(c => renderGaugeFor(c.id));
   });
@@ -596,7 +612,9 @@
     if (!p) return [];
     const trend = p.btcTrend === 'above' ? 'BTC بالای MA200' : p.btcTrend === 'below' ? 'BTC زیر MA200' : 'BTC نزدیک MA200';
     const fg = (p.fearGreed !== null && p.fearGreed !== undefined) ? `ترس‌وطمع: ${p.fearGreed}` : null;
-    const dom = p.dominance === 'up' ? 'دامیننس ↑' : p.dominance === 'down' ? 'دامیننس ↓' : 'دامیننس ثابت';
+    const dom = (p.dominanceValue !== null && p.dominanceValue !== undefined)
+      ? `دامیننس ${p.dominanceValue}٪${p.dominanceTrend === 'up' ? ' ↑' : p.dominanceTrend === 'down' ? ' ↓' : ''}`
+      : null;
     return [trend, fg, dom].filter(Boolean);
   }
 
